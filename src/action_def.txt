@@ -1,0 +1,6 @@
+loginFormOpen
+loginFormClose
+loginReq
+loginSuccess
+loginFail
+loginCancel
