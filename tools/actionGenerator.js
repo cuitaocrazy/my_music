@@ -21,8 +21,6 @@ function createDir(dir) {
 }
 
 function openFile(file) {
-
-
     if (fs.existsSync(file))
         fs.unlinkSync(file)
     else
@@ -45,22 +43,36 @@ function getMatches(p) {
     return ret
 }
 
-const writer = fd => content => fs.writeSync(fd, content)
+const writerBuilder = settings => entryList => {
+    const workers = settings.map(s => {
+        const fd = openFile(s.path)
+        fs.writeSync(fd, s.head)
+        return {
+            entryWrite: entry => fs.writeSync(fd, s.entryFormat(entry)),
+            close: () => fs.closeSync(fd)
+        }
+    })
 
-const withFd = path => work => {
-    const fd = openFile(path)
-    work(fd)
-    fs.closeSync(fd)
+    const combine = {
+        entryWrite: entry => workers.forEach(w => w.entryWrite(entry)),
+        close: () => workers.forEach(w => w.close())
+    }
+
+    entryList.forEach(entry => combine.entryWrite(entry))
+    combine.close()
 }
-
-const contentWriter = head => entryFormat => entryList => fd => {
-    writer(fd)(head)
-    entryList.forEach(entry => writer(fd)(entryFormat(entry)))
-}
-
-const aw = l => withFd(actionsJsFilePath)(contentWriter("import {createAction} from 'redux-act'\nimport * as Const from '../constants'\n\n")(entry => `export const ${entry[0]} = createAction(Const.${entry[1]})\n`)(l))
-const cw = l => withFd(constantsJsFilePath)(contentWriter("")(entry => `export const ${entry[1]} = '${entry[1]}'\n`)(l))
 
 const list = fs.readFileSync(path.join(srcPath, "action_def.txt")).toString().trim().split("\n").map(str => [str, getMatches(str).join("_")])
-aw(list)
-cw(list)
+
+writerBuilder([
+    {
+        path: actionsJsFilePath,
+        head: "import {createAction} from 'redux-act'\nimport * as Const from '../constants'\n\n",
+        entryFormat: entry => `export const ${entry[0]} = createAction(Const.${entry[1]})\n`
+    },
+    {
+        path: constantsJsFilePath,
+        head: "",
+        entryFormat: entry => `export const ${entry[1]} = '${entry[1]}'\n`
+    }
+])(list)
