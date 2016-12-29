@@ -46,6 +46,7 @@ const writer = settings => entryList => {
 
 const regex = /[A-Z]?[a-z]+/g
 const camelCaseConvert = str => str.match(regex).map(s => s.toUpperCase()).join("_")
+
 const list = fs.readFileSync(path.resolve(__dirname, "../src/action_def.txt")).toString().trim().split("\n").map(str => [str, camelCaseConvert(str)])
 
 writer([
