@@ -5,12 +5,8 @@
 import fs from 'fs'
 import path from 'path'
 
-const srcPath = path.resolve(__dirname, "../src")
-const actionsPath = path.join(srcPath, "actions")
-const constantsPath = path.join(srcPath, "constants")
-
-const actionsJsFilePath = path.join(actionsPath, "index.js")
-const constantsJsFilePath = path.join(constantsPath, "index.js")
+const actionsJsFilePath = path.join(__dirname, "../src/actions/index.js")
+const constantsJsFilePath = path.join(__dirname, "../src/constants/index.js")
 
 
 function createDir(dir) {
@@ -30,49 +26,38 @@ function openFile(file) {
 
 }
 
-const regex = /[A-Z]?[a-z]+/g
-
-function getMatches(p) {
-    const ret = []
-    let r
-
-    while (r = regex.exec(p)) {
-        ret.push(r[0].toUpperCase())
+function* contentGenerator(setting, entryList) {
+    yield setting.headFormat(entryList)
+    for (let entry of entryList) {
+        yield setting.entryFormat(entry)
     }
-
-    return ret
 }
 
-const writerBuilder = settings => entryList => {
-    const workers = settings.map(s => {
+const writer = settings => entryList => {
+    settings.forEach(s => {
+        const g = contentGenerator(s, entryList)
         const fd = openFile(s.path)
-        fs.writeSync(fd, s.head)
-        return {
-            entryWrite: entry => fs.writeSync(fd, s.entryFormat(entry)),
-            close: () => fs.closeSync(fd)
+        for(let line of g){
+            fs.writeSync(fd, line)
         }
+        fs.closeSync(fd)
     })
-
-    const combine = {
-        entryWrite: entry => workers.forEach(w => w.entryWrite(entry)),
-        close: () => workers.forEach(w => w.close())
-    }
-
-    entryList.forEach(entry => combine.entryWrite(entry))
-    combine.close()
 }
 
-const list = fs.readFileSync(path.join(srcPath, "action_def.txt")).toString().trim().split("\n").map(str => [str, getMatches(str).join("_")])
+const regex = /[A-Z]?[a-z]+/g
+const camelCaseConvert = str => str.match(regex).map(s => s.toUpperCase()).join("_")
+const list = fs.readFileSync(path.resolve(__dirname, "../src/action_def.txt")).toString().trim().split("\n").map(str => [str, camelCaseConvert(str)])
 
-writerBuilder([
+writer([
     {
         path: actionsJsFilePath,
-        head: "import {createAction} from 'redux-act'\nimport * as Const from '../constants'\n\n",
+        headFormat: entryList => "import {createAction} from 'redux-act'\nimport * as Const from '../constants'\n\n",
         entryFormat: entry => `export const ${entry[0]} = createAction(Const.${entry[1]})\n`
     },
     {
         path: constantsJsFilePath,
-        head: "",
+        headFormat: entryList => "",
         entryFormat: entry => `export const ${entry[1]} = '${entry[1]}'\n`
     }
 ])(list)
+
