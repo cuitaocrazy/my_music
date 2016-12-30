@@ -61,4 +61,3 @@ writer([
         entryFormat: entry => `export const ${entry[1]} = '${entry[1]}'\n`
     }
 ])(list)
-
