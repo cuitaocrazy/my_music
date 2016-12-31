@@ -6,7 +6,7 @@ import {takeLatest} from 'redux-saga'
 import * as Const from '../constants'
 import * as Act from '../actions'
 
-import {race, call, take, put, cancel, fork} from 'redux-saga/effects'
+import {race, call, take, put} from 'redux-saga/effects'
 import loginApi from '../api/loginApi'
 
 function delay(ms) {

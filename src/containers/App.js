@@ -2,13 +2,12 @@
  * Created by cuitao on 2016/12/27.
  */
 import React from 'react'
-import {connect} from 'react-redux'
 import Login from './Login'
-import {loginFormOpen} from '../actions'
+import Navigator from './Navigator'
 
-module.exports = connect(undefined, {loginFormOpen})(function (props) {
+module.exports = function () {
     return <div>
-        <a className="btn btn-success" onClick={e => props.loginFormOpen()}>show</a>
+        <Navigator />
         <Login/>
     </div>
-})
+}

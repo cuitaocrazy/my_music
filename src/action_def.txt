@@ -4,3 +4,4 @@ loginReq
 loginSuccess
 loginFail
 loginCancel
+logout

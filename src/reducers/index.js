@@ -15,7 +15,13 @@ const loginReducer = createReducer({
     [Act.loginCancel]: s => ({...s, loading: false})
 }, {})
 
+const userReducer = createReducer({
+    [Act.loginSuccess]: (s, username) => ({username, loggedIn: true}),
+    [Act.logout]: s => ({loggedIn: false})
+}, {loggedIn: false})
+
 export default combineReducers({
-    login: loginReducer
+    login: loginReducer,
+    user: userReducer
 })
 
